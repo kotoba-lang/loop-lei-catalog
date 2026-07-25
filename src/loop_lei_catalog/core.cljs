@@ -149,9 +149,19 @@
 
 ;; ── record evidence ─────────────────────────────────────────────────────────
 
-(defn- ledger-path []
-  (let [p (path/join (repo-root) "orgs/kotoba-lang/loop-lei-catalog/ledger/lei-catalog-ledger.edn")]
-    (if (fs/existsSync (path/dirname p)) p (path/join (.cwd js/process) "ledger/lei-catalog-ledger.edn"))))
+(defn- ledger-path
+  "Inside the loop repo when it is checked out, else beside the caller.
+
+  Resolved from the REPO directory, not from the ledger directory: git does not
+  track an empty directory, so a freshly cloned checkout has `src/` and
+  `resources/` but no `ledger/`, and testing for the ledger dir sent the first
+  cycle's evidence to a stray `ledger/` at the superproject root -- outside the
+  repo that owns it, and outside version control."
+  []
+  (let [repo (path/join (repo-root) "orgs/kotoba-lang/loop-lei-catalog")]
+    (if (fs/existsSync repo)
+      (path/join repo "ledger" "lei-catalog-ledger.edn")
+      (path/join (.cwd js/process) "ledger" "lei-catalog-ledger.edn"))))
 
 (defn record-evidence!
   "Appends ONE line to the append-only ledger. Records the measured before and
