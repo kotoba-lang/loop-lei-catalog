@@ -1,0 +1,6 @@
+{:paths ["src" "resources"]
+ ;; Domain scoring is delegated, never vendored: the repository-role taxonomy
+ ;; forbids a loop-* repo owning scoring truth.
+ :deps {io.github.kotoba-lang/catalog-maturity
+        {:git/url "https://github.com/kotoba-lang/catalog-maturity.git"
+         :git/sha "REPLACE_AFTER_FIRST_PUSH"}}}
