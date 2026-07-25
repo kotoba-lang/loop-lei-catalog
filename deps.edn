@@ -3,4 +3,4 @@
  ;; forbids a loop-* repo owning scoring truth.
  :deps {io.github.kotoba-lang/catalog-maturity
         {:git/url "https://github.com/kotoba-lang/catalog-maturity.git"
-         :git/sha "REPLACE_AFTER_FIRST_PUSH"}}}
+         :git/sha "7804bfb004a101e51497c9d3454ba18e9af8671c"}}}
