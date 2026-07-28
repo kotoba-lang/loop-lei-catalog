@@ -2,7 +2,7 @@
   "Continuous orchestrator for the cloud-itonami-lei corporate catalog:
   observe -> evaluate -> decide -> act -> record-evidence.
 
-  Role boundary (loop-ux-kaizen `resources/repository-rules.edn`): a `loop-*`
+  Role boundary (com-junkawasaki/root `manifest/repository-rules.edn`): a `loop-*`
   repo runs cycles and must NOT own domain scoring truth. The rubric -- what
   the axes are, how they are weighted, what counts as unmeasured -- lives in
   the `catalog-maturity` library and is tested there. This namespace only
