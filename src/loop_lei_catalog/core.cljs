@@ -109,9 +109,16 @@
       {:ok false :out (str (some-> (.-stdout e) str) (some-> (.-stderr e) str))
        :error (.-message e)})))
 
-(defn- summary-line [out]
+(defn- summary-line
+  "The acting script's own SUMMARY line, whichever script ran.
+
+  Matching only `candidates:` (lei-acquire's wording) meant every
+  discover-contact-routes cycle recorded `:action-summary nil` -- the ledger
+  could say the score moved but not that 40 sites were checked and N published a
+  route. lei-contact-discover's summary starts with `checked:`."
+  [out]
   (->> (str/split-lines (str out))
-       (filter #(str/includes? % "candidates:"))
+       (filter #(or (str/includes? % "candidates:") (str/includes? % "checked:")))
        last))
 
 (defn act
