@@ -9,10 +9,11 @@
   observes real state, asks that library what is weakest, runs a bounded
   amount of work, and writes down what actually happened.
 
-  Observation is a live SQL read against the D1 catalog. It is never estimated
-  and never carried over from a previous cycle: an unreachable database makes
-  the cycle FAIL rather than produce a plan from stale numbers, because a plan
-  built on last week's coverage would look identical to one built on today's.
+  Observation is a live read of the catalog's EDN in git (via the superproject's
+  `scripts/lei-catalog-observe.cljs`). It is never estimated and never carried
+  over from a previous cycle: an unreadable catalog makes the cycle FAIL rather
+  than produce a plan from stale numbers, because a plan built on last week's
+  coverage would look identical to one built on today's.
 
   Every action shells out to the existing superproject scripts rather than
   reimplementing acquisition or discovery here. Those scripts are the tested
@@ -26,8 +27,6 @@
             [cljs.reader :as edn]
             [catalog-maturity.core :as cm]))
 
-(def ^:private db "cloud-itonami-lei-catalog")
-
 (defn- repo-root
   "The superproject root, taken from LEI_LOOP_ROOT or the current directory.
   Not hardcoded and not derived from this file's location: the loop is meant
@@ -38,34 +37,33 @@
 
 ;; ── observe ─────────────────────────────────────────────────────────────────
 
-(defn- d1-json [sql]
-  (let [out (execSync (str "npx wrangler d1 execute " db " --remote -y --json --command " (pr-str sql))
+(defn observe
+  "Live counts from the catalog's SOURCE OF TRUTH -- the blueprint.edn and ToS
+  journal in each repo -- by shelling out to the superproject's
+  `scripts/lei-catalog-observe.cljs`.
+
+  It used to be a set of `SELECT`s against the D1 projection. Owner direction
+  2026-08-04 (「なぜ sql ? edn で datalad 保存では?」) removed SQL from this path.
+  The projection was not merely redundant, it lagged: D1 answered 78 reachable
+  companies at a moment when git already held 84, so a cycle could have scored
+  itself against a stale denominator and concluded its own action did nothing.
+
+  Reading is shelled out rather than reimplemented for the same reason acting
+  is: two readers of one catalog drift, and the drift shows up as a maturity
+  score that moves while the catalog stands still."
+  []
+  (let [out (execSync (str "nbb --classpath scripts scripts/lei-catalog-observe.cljs")
                       #js {:encoding "utf8" :maxBuffer (* 40 1024 1024) :stdio "pipe"
                            :cwd (repo-root)})
-        i (.indexOf out "[")]
-    (when (neg? i) (throw (js/Error. (str "no JSON in wrangler output: " (subs out 0 200)))))
-    (js->clj (js/JSON.parse (subs out i)) :keywordize-keys true)))
-
-(defn- rows [sql] (get-in (first (d1-json sql)) [:results]))
-
-(defn observe
-  "Live counts from D1. Provenance is counted strictly: a document needs BOTH
-  a retrieval timestamp and a content hash, since either alone leaves the
-  archived text uncheckable."
-  []
-  (let [agg (first (rows (str "SELECT "
-                              "(SELECT COUNT(*) FROM company) AS companies, "
-                              "(SELECT COUNT(*) FROM tos_doc) AS docs, "
-                              "(SELECT COUNT(DISTINCT lei) FROM tos_doc) AS with_doc, "
-                              "(SELECT COUNT(*) FROM tos_doc WHERE retrieved_at IS NOT NULL AND sha256 IS NOT NULL) AS docs_prov, "
-                              "(SELECT COUNT(*) FROM company WHERE contact_email IS NOT NULL OR inquiry_form_url IS NOT NULL) AS reachable")))
-        by-country (rows "SELECT country, COUNT(*) AS n FROM company WHERE country IS NOT NULL GROUP BY country")]
-    {:companies (:companies agg)
-     :docs (:docs agg)
-     :with-doc (:with_doc agg)
-     :docs-with-provenance (:docs_prov agg)
-     :reachable (:reachable agg)
-     :country-counts (into {} (map (juxt :country :n)) by-country)}))
+        obs (edn/read-string (str/trim out))]
+    (when-not (:companies obs)
+      (throw (js/Error. (str "lei-catalog-observe returned no companies: " (subs (str out) 0 200)))))
+    ;; An incomplete read fails the cycle rather than scoring against it: a
+    ;; maturity computed over 170 of 185 repos looks exactly like one computed
+    ;; over all of them, and the difference is invisible in the ledger.
+    (when (pos? (or (:unreadable obs) 0))
+      (throw (js/Error. (str (:unreadable obs) " repo(s) unreadable — refusing to score a partial catalog"))))
+    obs))
 
 ;; ── evaluate ────────────────────────────────────────────────────────────────
 
@@ -122,7 +120,7 @@
        last))
 
 (defn act
-  "Runs ONE bounded step for the chosen action, then re-projects git into D1.
+  "Runs ONE bounded step for the chosen action.
 
   Bounded on purpose: a cycle that tried to close the whole gap would run for
   hours, and its evidence entry could not say which change produced which
@@ -134,7 +132,7 @@
     (let [action (:action chosen)
           cmd (case action
                 :discover-contact-routes
-                (str "nbb scripts/lei-contact-discover.cljs --concurrency 6"
+                (str "nbb --classpath scripts scripts/lei-contact-discover.cljs --concurrency 6"
                      (when contact-limit (str " --limit " contact-limit))
                      (when dry-run? " --dry-run"))
                 (:acquire-new-country :acquire-outside-dominant-country :archive-missing-documents)
@@ -142,17 +140,19 @@
                 nil)]
       (if-not cmd
         {:action action :note ":no-runner"}
-        (let [r (sh cmd)
-              ;; Re-project even on a partial failure: whatever DID land in git
-              ;; belongs in the catalog, and leaving D1 behind would make the
-              ;; next cycle observe a state that no longer exists.
-              proj (when-not dry-run? (sh "nbb scripts/d1-ingest-cloud-itonami-lei.cljs"))]
+        ;; No re-projection step. It used to run `d1-ingest` after every action
+        ;; so the NEXT observation would see what had landed -- necessary only
+        ;; while observation came from D1. Observation now reads git directly,
+        ;; so whatever the action wrote is already visible, and re-projecting
+        ;; would be ~185 HTTP fetches spent keeping a cache nothing in this loop
+        ;; reads. `scripts/d1-ingest-cloud-itonami-lei.cljs` still exists for
+        ;; anyone who wants the SQL view; it is just no longer on this path.
+        (let [r (sh cmd)]
           {:action action
            :command cmd
            :ok (:ok r)
            :summary (summary-line (:out r))
-           :error (:error r)
-           :reprojected (boolean (:ok proj))})))))
+           :error (:error r)})))))
 
 ;; ── record evidence ─────────────────────────────────────────────────────────
 
