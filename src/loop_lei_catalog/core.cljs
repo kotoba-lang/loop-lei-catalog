@@ -167,11 +167,19 @@
   "Appends ONE line to the append-only ledger. Records the measured before and
   after, not just the after: a score with nothing to compare against cannot
   show whether the cycle helped, and a cycle that made things worse must be as
-  visible as one that helped."
-  [{:keys [before after action]}]
+  visible as one that helped.
+
+  A dry run is LABELLED, never omitted. Without the flag its entry is
+  indistinguishable from a real cycle -- same axes, same `:action-ok true`,
+  same before == after -- so an operator verifying the loop silently writes a
+  cycle that appears to have run and moved nothing. Omitting the entry instead
+  would be worse: the ledger would stop being a record of every time this loop
+  ran."
+  [{:keys [before after action dry-run?]}]
   (let [p (ledger-path)
         entry {:event/as-of (first (str/split (.toISOString (js/Date.)) #"T"))
                :event/at (.toISOString (js/Date.))
+               :event/dry-run (boolean dry-run?)
                :event/companies-before (:companies (:observed before))
                :event/companies-after (:companies (:observed after))
                :event/countries-before (count (:country-counts (:observed before)))
@@ -204,6 +212,7 @@
         decision (decide before)
         result (act decision opts)
         after (if dry-run? before (evaluate (observe) targets))
-        ev (record-evidence! {:before before :after after :action result})]
+        ev (record-evidence! {:before before :after after :action result
+                              :dry-run? dry-run?})]
     {:before before :after after :decision decision :action result
      :ledger-path (:ledger-path ev) :entry (:entry ev)}))
