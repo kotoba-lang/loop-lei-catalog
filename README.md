@@ -15,6 +15,29 @@ runs a bounded amount of work, and writes down what actually happened.
 
     LEI_LOOP_ROOT=<superproject root> nbb bin/run.cljs [--dry-run] [--contact-limit N]
 
+A dry run still observes live and still writes a ledger entry — labelled
+`:event/dry-run true`. It is not omitted: the ledger is a record of every time
+this loop ran, including the times it was only being checked.
+
+## Schedule
+
+`deploy/` holds the runner. It is one file, checked out, not a copy under
+`~/.gftd` — two copies of a scheduler drift, and the one that drifts is always
+the one actually firing.
+
+    cp deploy/com.kotoba-lang.lei-catalog-tick.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.kotoba-lang.lei-catalog-tick.plist
+    launchctl kickstart gui/$(id -u)/com.kotoba-lang.lei-catalog-tick   # run one now
+
+Every 6h, bounded to 40 contact fetches per cycle. The runner syncs this repo to
+`origin/main` *before* the cycle and commits + pushes the appended ledger line
+after — a cycle whose evidence never leaves the machine cannot be told apart
+from one that never ran. If a previous push was rejected the next tick reports
+it and skips, rather than resolving an append-only conflict on its own.
+
+Log: `~/.gftd/lei-catalog-tick.stdout.log`. Each firing is also a `tamaki`
+AgentRun (`:mode :external`) with the real argv and exit code.
+
 ## Design decisions that are easy to get wrong
 
 **Observation is live, never carried over.** An unreachable database fails the
