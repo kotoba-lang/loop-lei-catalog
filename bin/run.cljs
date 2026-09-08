@@ -1,6 +1,6 @@
 (ns run
   (:require [loop-lei-catalog.core :as loop]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (def argv (vec (drop 2 (js->clj (.-argv js/process)))))
 (defn- flag [n] (let [i (.indexOf (clj->js argv) n)]
