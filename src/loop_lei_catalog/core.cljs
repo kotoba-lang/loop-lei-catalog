@@ -23,7 +23,7 @@
   (:require ["fs" :as fs]
             ["path" :as path]
             ["child_process" :refer [execSync]]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [cljs.reader :as edn]
             [catalog-maturity.core :as cm]))
 
