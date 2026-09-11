@@ -1,4 +1,4 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; run-lei-catalog-tick.cljs — LaunchAgent entry for the cloud-itonami-lei
 ;; corporate-catalog loop. One tick = one bounded cycle of
 ;; kotoba-lang/loop-lei-catalog: observe (live D1) -> evaluate (catalog-maturity)
@@ -88,7 +88,7 @@
                    "cloud-itonami-lei catalog loop tick: observe -> evaluate -> decide -> act -> record-evidence"
                    "--project" root
                    "--"
-                   "nbb" "--classpath"
+                   "kbb" "--backend" "sci" "--classpath"
                    "orgs/kotoba-lang/loop-lei-catalog/src:orgs/kotoba-lang/loop-lei-catalog/resources:orgs/kotoba-lang/catalog-maturity/src"
                    "orgs/kotoba-lang/loop-lei-catalog/bin/run.cljk"
                    "--contact-limit" contact-limit]

@@ -52,7 +52,7 @@
   is: two readers of one catalog drift, and the drift shows up as a maturity
   score that moves while the catalog stands still."
   []
-  (let [out (execSync (str "nbb --classpath scripts scripts/lei-catalog-observe.cljs")
+  (let [out (execSync (str "kbb --backend sci --classpath scripts scripts/lei-catalog-observe.cljs")
                       #js {:encoding "utf8" :maxBuffer (* 40 1024 1024) :stdio "pipe"
                            :cwd (repo-root)})
         obs (edn/read-string (str/trim out))]
@@ -132,11 +132,11 @@
     (let [action (:action chosen)
           cmd (case action
                 :discover-contact-routes
-                (str "nbb --classpath scripts scripts/lei-contact-discover.cljs --concurrency 6"
+                (str "kbb --backend sci --classpath scripts scripts/lei-contact-discover.cljs --concurrency 6"
                      (when contact-limit (str " --limit " contact-limit))
                      (when dry-run? " --dry-run"))
                 (:acquire-new-country :acquire-outside-dominant-country :archive-missing-documents)
-                (str "nbb scripts/lei-acquire.cljs --concurrency 4" (when dry-run? " --dry-run"))
+                (str "kbb --backend sci scripts/lei-acquire.cljk --concurrency 4" (when dry-run? " --dry-run"))
                 nil)]
       (if-not cmd
         {:action action :note ":no-runner"}
