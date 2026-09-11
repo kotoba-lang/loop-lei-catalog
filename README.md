@@ -13,7 +13,7 @@ runs a bounded amount of work, and writes down what actually happened.
 
 ## Run
 
-    LEI_LOOP_ROOT=<superproject root> nbb bin/run.cljs [--dry-run] [--contact-limit N]
+    LEI_LOOP_ROOT=<superproject root> nbb bin/run.cljk [--dry-run] [--contact-limit N]
 
 A dry run still observes live and still writes a ledger entry — labelled
 `:event/dry-run true`. It is not omitted: the ledger is a record of every time

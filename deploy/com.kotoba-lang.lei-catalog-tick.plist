@@ -19,7 +19,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/opt/homebrew/bin/nbb</string>
-    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/loop-lei-catalog/deploy/run-lei-catalog-tick.cljs</string>
+    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/loop-lei-catalog/deploy/run-lei-catalog-tick.cljk</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
