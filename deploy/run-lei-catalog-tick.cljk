@@ -90,7 +90,7 @@
                    "--"
                    "nbb" "--classpath"
                    "orgs/kotoba-lang/loop-lei-catalog/src:orgs/kotoba-lang/loop-lei-catalog/resources:orgs/kotoba-lang/catalog-maturity/src"
-                   "orgs/kotoba-lang/loop-lei-catalog/bin/run.cljs"
+                   "orgs/kotoba-lang/loop-lei-catalog/bin/run.cljk"
                    "--contact-limit" contact-limit]
               #js {:cwd root :encoding "utf8" :stdio "inherit" :env child-env}))
 
