@@ -52,7 +52,7 @@
   is: two readers of one catalog drift, and the drift shows up as a maturity
   score that moves while the catalog stands still."
   []
-  (let [out (execSync (str "kbb --backend sci --classpath scripts scripts/lei-catalog-observe.cljs")
+  (let [out (execSync (str "kbb --backend sci --classpath scripts scripts/lei-catalog-observe.cljk")
                       #js {:encoding "utf8" :maxBuffer (* 40 1024 1024) :stdio "pipe"
                            :cwd (repo-root)})
         obs (edn/read-string (str/trim out))]
