@@ -43,7 +43,7 @@
   (js/Object.assign
    #js {}
    (.-env js/process)
-   #js {:PATH (str "/usr/bin:/bin:/opt/homebrew/bin:" (.-env.PATH js/process))
+   #js {:PATH (str "/Users/junkawasaki/.local/bin:/usr/bin:/bin:/opt/homebrew/bin:" (.. js/process -env -PATH))
         :GIT_SSH_COMMAND "/usr/bin/ssh"
         :GIT_TERMINAL_PROMPT "0"
         :LEI_LOOP_ROOT root
@@ -89,7 +89,7 @@
                    "--project" root
                    "--"
                    "kbb" "--backend" "sci" "--classpath"
-                   "orgs/kotoba-lang/loop-lei-catalog/src:orgs/kotoba-lang/loop-lei-catalog/resources:orgs/kotoba-lang/catalog-maturity/src"
+                   "orgs/kotoba-lang/loop-lei-catalog/src:orgs/kotoba-lang/loop-lei-catalog/resources:orgs/kotoba-lang/catalog-maturity/src:orgs/kotoba-lang/text/src"
                    "orgs/kotoba-lang/loop-lei-catalog/bin/run.cljk"
                    "--contact-limit" contact-limit]
               #js {:cwd root :encoding "utf8" :stdio "inherit" :env child-env}))
